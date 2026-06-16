@@ -1,9 +1,1 @@
-{
-  "name": "gest-proposal-generator",
-  "version": "1.0.0",
-  "description": "GEST AI Proposal Generator — Water & Wastewater Equipment",
-  "private": true,
-  "engines": {
-    "node": "18.x"
-  }
-}
+{ "name": "gest-ai-demo-portal", "version": "1.0.0", "private": true, "engines": { "node": "24.x" } }
