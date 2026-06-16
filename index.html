@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GEST — AI Proposal Generator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f7f6; color: #1a1a1a; min-height: 100vh; }
+
+  /* Header */
+  .hdr { background: #fff; border-bottom: 1px solid #e5e7e6; padding: 14px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; }
+  .logo { width: 38px; height: 38px; background: #1D9E75; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 600; letter-spacing: 0.3px; flex-shrink: 0; }
+  .hdr-text h1 { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+  .hdr-text p { font-size: 12px; color: #6b7280; }
+  .hdr-badge { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #1D9E75; background: #E1F5EE; padding: 4px 10px; border-radius: 20px; }
+  .hdr-badge span { width: 6px; height: 6px; border-radius: 50%; background: #1D9E75; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* Layout */
+  .page { max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  /* Form card */
+  .card { background: #fff; border: 1px solid #e5e7e6; border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+  .card-hdr { padding: 16px 20px; border-bottom: 1px solid #f0f0f0; }
+  .card-hdr h2 { font-size: 13px; font-weight: 600; color: #6b7280; letter-spacing: 0.05em; text-transform: uppercase; }
+  .card-body { padding: 20px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media(max-width:600px) { .grid2,.grid3 { grid-template-columns: 1fr; } }
+
+  .fg { display: flex; flex-direction: column; gap: 5px; }
+  .fg label { font-size: 12px; font-weight: 500; color: #374151; }
+  .fg input, .fg select, .fg textarea {
+    font-size: 14px; padding: 9px 12px; border-radius: 8px;
+    border: 1px solid #d1d5db; background: #fff; color: #1a1a1a;
+    font-family: inherit; transition: border-color .15s;
+  }
+  .fg input:focus, .fg select:focus, .fg textarea:focus { outline: none; border-color: #1D9E75; box-shadow: 0 0 0 3px #1D9E7515; }
+  .fg textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+
+  .divider { border: none; border-top: 1px solid #f0f0f0; margin: 4px 0 16px; }
+
+  /* Equipment pills */
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; border: 1px solid #d1d5db; cursor: pointer; font-size: 13px; color: #374151; transition: all .15s; user-select: none; }
+  .pill input { accent-color: #1D9E75; }
+  .pill:has(input:checked) { border-color: #1D9E75; background: #E1F5EE; color: #0F6E56; }
+
+  /* Generate button */
+  .gen-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px; background: #1D9E75; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 4px; transition: background .15s, transform .1s; }
+  .gen-btn:hover { background: #178a65; }
+  .gen-btn:active { transform: scale(0.99); }
+  .gen-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+  /* Output */
+  .output-card { background: #fff; border: 1px solid #e5e7e6; border-radius: 12px; overflow: hidden; margin-top: 24px; }
+  .output-hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid #f0f0f0; background: #fafafa; }
+  .output-hdr-left { display: flex; align-items: center; gap: 8px; }
+  .output-hdr-left span { font-size: 14px; font-weight: 600; }
+  .out-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; background: #E1F5EE; color: #0F6E56; }
+  .action-row { display: flex; gap: 8px; }
+  .action-btn { display: flex; align-items: center; gap: 5px; font-size: 12px; padding: 6px 12px; border-radius: 8px; border: 1px solid #d1d5db; background: #fff; color: #374151; cursor: pointer; font-family: inherit; transition: background .15s; }
+  .action-btn:hover { background: #f5f7f6; }
+  .output-body { padding: 28px 32px; font-size: 14px; line-height: 1.85; color: #1a1a1a; white-space: pre-wrap; min-height: 200px; }
+
+  /* Loading */
+  .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px; gap: 16px; }
+  .dots { display: flex; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #1D9E75; animation: bop 1.2s infinite; }
+  .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+  @keyframes bop{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-8px)}}
+  .loading p { font-size: 14px; color: #6b7280; }
+
+  /* Error */
+  .error-box { padding: 20px 24px; background: #FCEBEB; border-left: 3px solid #A32D2D; font-size: 13px; color: #A32D2D; }
+
+  /* Footer */
+  .footer { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 40px; }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">GST</div>
+  <div class="hdr-text">
+    <h1>GEST AI Proposal Generator</h1>
+    <p>Water & Wastewater Equipment — Jeddah, KSA</p>
+  </div>
+  <div class="hdr-badge"><span></span> AI Powered</div>
+</div>
+
+<div class="page">
+
+  <div class="card">
+    <div class="card-hdr"><h2>Project details</h2></div>
+    <div class="card-body">
+      <div class="grid2" style="margin-bottom:14px;">
+        <div class="fg">
+          <label>Client / EPC company</label>
+          <input id="client" type="text" placeholder="e.g. Saudi Aramco, MEPCO, NWC"/>
+        </div>
+        <div class="fg">
+          <label>Project location</label>
+          <input id="location" type="text" placeholder="e.g. Riyadh, Eastern Province, KAEC"/>
+        </div>
+      </div>
+      <div class="grid2" style="margin-bottom:14px;">
+        <div class="fg">
+          <label>Project type</label>
+          <select id="ptype">
+            <option value="Wastewater Treatment Plant (STP)">Wastewater Treatment Plant (STP)</option>
+            <option value="Water Storage Tanks">Water Storage Tanks</option>
+            <option value="Sludge Dewatering System">Sludge Dewatering System</option>
+            <option value="Odor Control System">Odor Control System</option>
+            <option value="Aeration & Decanting System">Aeration & Decanting System</option>
+            <option value="Full STP Package">Full STP Package</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Capacity / scale</label>
+          <input id="capacity" type="text" placeholder="e.g. 5,000 m³/day, 3 × 20,000 m³"/>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Special requirements or notes</label>
+        <textarea id="notes" placeholder="e.g. NWC compliance required, Vision 2030 project, first installation in region, tight deadline..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><h2>Equipment scope</h2></div>
+    <div class="card-body">
+      <div class="pills">
+        <label class="pill"><input type="checkbox" value="GLS Tanks (Omerastore)"/> GLS Tanks — Omerastore</label>
+        <label class="pill"><input type="checkbox" value="Odor Control System (Tholander)"/> Odor Control — Tholander</label>
+        <label class="pill"><input type="checkbox" value="Sludge Dewatering (Vitone Eco)"/> Sludge Dewatering — Vitone Eco</label>
+        <label class="pill"><input type="checkbox" value="Aeration & Decanting (Biogest)"/> Aeration & Decanting — Biogest</label>
+        <label class="pill"><input type="checkbox" value="STP Mechanical Equipment (EMO)"/> STP Mechanical — EMO</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><h2>Proposal settings</h2></div>
+    <div class="card-body">
+      <div class="grid3">
+        <div class="fg">
+          <label>Language</label>
+          <select id="lang">
+            <option value="English">English</option>
+            <option value="Arabic">Arabic (العربية)</option>
+            <option value="bilingual English and Arabic">Bilingual (EN + AR)</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Tone</label>
+          <select id="tone">
+            <option value="formal and professional, suitable for Saudi government and NWC submissions">Formal / Government</option>
+            <option value="technical and engineering-focused with specifications">Technical / Engineering</option>
+            <option value="commercial and persuasive, highlighting value and ROI">Commercial / Sales</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Proposal length</label>
+          <select id="length">
+            <option value="concise (300 words)">Concise — 1 page</option>
+            <option value="standard (500 words)" selected>Standard — 2 pages</option>
+            <option value="detailed (800 words)">Detailed — 3 pages</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="gen-btn" id="gen-btn" onclick="generate()">
+    ✦ Generate proposal with AI
+  </button>
+
+  <div id="output"></div>
+
+  <div class="footer">GEST — Water & Wastewater Equipment · Jeddah, KSA · info@gest-sa.com · +966 12 2636919</div>
+</div>
+
+<script>
+async function generate() {
+  const client   = document.getElementById('client').value.trim() || 'Valued EPC Contractor';
+  const location = document.getElementById('location').value.trim() || 'Kingdom of Saudi Arabia';
+  const ptype    = document.getElementById('ptype').value;
+  const capacity = document.getElementById('capacity').value.trim() || 'as per project specifications';
+  const notes    = document.getElementById('notes').value.trim();
+  const lang     = document.getElementById('lang').value;
+  const tone     = document.getElementById('tone').value;
+  const length   = document.getElementById('length').value;
+  const equip    = [...document.querySelectorAll('.pills input:checked')].map(c => c.value).join(', ') || 'Full equipment package as required';
+
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true; btn.textContent = 'Generating...';
+
+  document.getElementById('output').innerHTML = `
+    <div class="output-card">
+      <div class="output-hdr"><div class="output-hdr-left"><span>Generating proposal...</span></div></div>
+      <div class="loading"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><p>AI is drafting your proposal — this takes about 15 seconds</p></div>
+    </div>`;
+
+  const prompt = `You are a senior technical sales engineer at GEST, a leading water and wastewater equipment supply company based in Jeddah, Saudi Arabia. GEST supplies and services equipment from world-class European partners: Omerastore (GLS Tanks), Tholander (Odor Control Systems), Vitone Eco (Sludge Dewatering), Biogest (Aeration & Decanting), and EMO (STP Mechanical Equipment). GEST has completed major projects including Al Ghat, Turaif, Manfuha, Al Khobar, Abu Arish, KAEC, MEPCO, Metito Bahrain, MODON Industrial Cities, Sudair, and Suliman Al-Rajhi. GEST aligns with Saudi Vision 2030 and serves NWC, MEPCO, MODON, Saudi Aramco, and private sector clients.
+
+Write a ${tone} proposal letter in ${lang}, ${length}, for:
+- Client / EPC Company: ${client}
+- Project Location: ${location}
+- Project Type: ${ptype}
+- Capacity: ${capacity}
+- Equipment Scope: ${equip}
+${notes ? '- Special Notes: ' + notes : ''}
+
+Structure the proposal with these sections:
+1. Professional salutation and opening
+2. Brief GEST company introduction (credentials, Vision 2030 alignment, KSA track record with real project names)
+3. Scope of supply — each piece of equipment with a 1-sentence technical highlight and the European partner name
+4. Why GEST — single-source supplier advantage, after-sales support, European quality, proven KSA references
+5. Professional closing with clear next steps and contact information
+
+Use professional formatting with clear section headings. No pricing figures. End with GEST contact details.`;
+
+  try {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    const dateStr = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+    document.getElementById('output').innerHTML = `
+      <div class="output-card">
+        <div class="output-hdr">
+          <div class="output-hdr-left">
+            <span>Proposal ready</span>
+            <span class="out-badge">Generated ${dateStr}</span>
+          </div>
+          <div class="action-row">
+            <button class="action-btn" onclick="copyText()">⎘ Copy</button>
+            <button class="action-btn" onclick="printProposal()">⎙ Print / Save PDF</button>
+          </div>
+        </div>
+        <div class="output-body" id="proposal-text">${data.text}</div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('output').innerHTML = `
+      <div class="output-card">
+        <div class="error-box">Error: ${e.message}. Please check your API key in the server configuration and try again.</div>
+      </div>`;
+  }
+
+  btn.disabled = false; btn.textContent = '✦ Generate proposal with AI';
+}
+
+function copyText() {
+  const el = document.getElementById('proposal-text');
+  if (el) navigator.clipboard.writeText(el.innerText);
+}
+
+function printProposal() {
+  window.print();
+}
+</script>
+
+<style media="print">
+  .hdr, .card, .gen-btn, .output-hdr { display: none !important; }
+  .output-body { padding: 0; font-size: 12pt; line-height: 1.8; }
+</style>
+</body>
+</html>
